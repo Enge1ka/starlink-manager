@@ -57,6 +57,17 @@ export default function KitsPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<Kit | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [renewingId, setRenewingId] = useState<string | null>(null)
+
+  async function handleRenew(k: Kit) {
+    setRenewingId(k.id)
+    try {
+      const res = await fetch(`/api/kits/${k.id}/renew`, { method: 'POST' })
+      if (res.ok) { toast(`${k.kitName} renewed +30 days`); load() }
+      else toast('Failed to renew', 'error')
+    } catch { toast('Network error', 'error') }
+    finally { setRenewingId(null) }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -163,6 +174,9 @@ export default function KitsPage() {
                     <td>{k.location || '—'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '4px' }}>
+                        <button onClick={() => handleRenew(k)} disabled={renewingId === k.id} className="btn-icon" title="Renew +30 days" style={{ color: '#6ec6ff' }}>
+                          {renewingId === k.id ? <span className="spinner" style={{ width: '10px', height: '10px' }} /> : '↻'}
+                        </button>
                         <button onClick={() => openEdit(k)} className="btn-icon">✏</button>
                         <button onClick={() => setDeleting(k)} className="btn-icon" style={{ color: '#ff4444' }}>🗑</button>
                       </div>

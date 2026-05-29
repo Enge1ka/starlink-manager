@@ -28,6 +28,22 @@ export default function KitDetailPage({ params }: { params: Promise<{ id: string
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [renewing, setRenewing] = useState(false)
+
+  async function handleRenew() {
+    setRenewing(true)
+    try {
+      const res = await fetch(`/api/kits/${id}/renew`, { method: 'POST' })
+      if (res.ok) {
+        const d = await res.json()
+        setKit(d)
+        toast('Expiry extended by 30 days')
+      } else {
+        toast('Failed to renew', 'error')
+      }
+    } catch { toast('Network error', 'error') }
+    finally { setRenewing(false) }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -180,7 +196,12 @@ export default function KitDetailPage({ params }: { params: Promise<{ id: string
           </div>
 
           <div className="card">
-            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px', color: '#ffffff' }}>Expiry Status</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>Expiry Status</h3>
+              <button onClick={handleRenew} disabled={renewing} className="btn btn-secondary btn-sm">
+                {renewing ? <span className="spinner" style={{ width: '12px', height: '12px' }} /> : 'Renew +30 days'}
+              </button>
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <div style={{
                 width: '80px', height: '80px', borderRadius: '50%',
