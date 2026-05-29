@@ -1,40 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase-browser'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [checking, setChecking] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/setup')
-      .then(r => r.json())
-      .then(d => {
-        if (d.needsSetup) router.replace('/setup')
-        else setChecking(false)
-      })
-  }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? 'Invalid credentials')
+      const supabase = createClient()
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      if (authError) {
+        setError(authError.message)
       } else {
         router.push('/dashboard')
+        router.refresh()
       }
     } catch {
       setError('Network error. Please try again.')
@@ -43,17 +31,8 @@ export default function LoginPage() {
     }
   }
 
-  if (checking) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="spinner" style={{ width: '20px', height: '20px' }} />
-      </div>
-    )
-  }
-
   return (
     <div style={{ minHeight: '100vh', background: '#0d0d0d', display: 'flex', flexDirection: 'column' }}>
-      {/* Top bar */}
       <div style={{ height: '60px', background: '#111111', borderBottom: '1px solid #222222', display: 'flex', alignItems: 'center', padding: '0 32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '28px', height: '28px', background: '#ffffff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#000' }}>📡</div>
@@ -61,7 +40,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Login form */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ width: '100%', maxWidth: '360px' }} className="slide-up">
           <div style={{ marginBottom: '32px' }}>
@@ -71,13 +49,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div className="form-group">
-              <label className="label">Username</label>
+              <label className="label">Email</label>
               <input
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="your username"
-                autoComplete="username"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
                 autoFocus
                 required
               />
